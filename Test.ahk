@@ -2,29 +2,40 @@
 ; #Warn  ; Enable warnings to assist with detecting common errors.
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
+#Include ChildProc.ahk
 
-#Include, ProcessInfo_LinearSpoon.ahk
+STEAM_CLASS := "CUIEngineWin32"
+STEAM_EXE := "steam.exe"
+CurrentlyRunningGame := ""
 
-s::
-;scriptPID := GetCurrentProcess()
-WinGet, scriptPID, PID, A
-scriptEXE := GetProcessName(scriptPID)
-while True {
-    parentPID := GetParentProcess(scriptPID)
-    parentEXE := GetProcessName(parentPID)
-    WinGetClass, parentName, ahk_exe %parentEXE%
-    Msgbox % "Script PID: " scriptPID "`nScript executable: " scriptEXE "`nParent PID: " parentPID "`nParent executable: " parentEXE
-    Msgbox % "Parent name: " parentName
-    scriptPID := parentPID
+
+DetectAndUpdateGame() { 
+    global CurrentlyRunningGame
+    WinGet, SteamProcPID, PID, ahk_exe steam.exe
+
+    ChildProc := GetChildProcessName(SteamProcPID)
+
+    tempProc := ""
+    for each, proc in ChildProc {
+        if (proc != "steamwebhelper.exe") && (proc != "steamservice.exe") && (proc != "GameOverlayUi.exe") {
+            tempProc := proc
+            MsgBox, %tempProc%
+        }
+            
+
+    }
+
+    if (tempProc != "") {
+        WinGetClass, tempProcClass, ahk_exe tempProc
+        CurrentlyRunningGame = tempProcClass
+
+    }
+
+    return
+
 }
 
+dummy := ""
 k::
-WinGet, ChildProcessId, List , A
-Loop, %ChildProcessId%
-{
-    this_id := ChildProcessId%A_Index%
-    WinActivate, ahk_id %this_id%
-    WinGetClass, this_class, ahk_id %this_id%
-    WinGetTitle, this_title, ahk_id %this_id%
-    MsgBox % "Process title: " this_title " Process Class: " this_class
-}
+WinActivate, ahk_class %dummy%
+return

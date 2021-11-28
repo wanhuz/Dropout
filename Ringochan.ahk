@@ -3,6 +3,7 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #SingleInstance Force
+#Include ChildProc.ahk
 
 /*
 Version History:
@@ -47,6 +48,8 @@ Key Mapping for iPega 9083s Android Mode
 
 */
 STEAM_CLASS := "CUIEngineWin32"
+STEAM_EXE := "steam.exe"
+CurrentlyRunningGame := ""
 
 DesktopIconData := DesktopIcons()
 Menu, Tray, Add , &Exit Steam, ExitSteam
@@ -54,7 +57,7 @@ AlreadyMoved := False
 
 SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
 SetTimer, SaveDesktopIcon, 180000
-
+SetTimer, UpdateGame, 5000
 
 EnableHotkey:
 Joy1::
@@ -288,6 +291,41 @@ DesktopIcons(coords="") {
    return ret
 }
 
+DetectRunningGame() { 
+    WinGet, SteamProcPID, PID, ahk_exe steam.exe
+
+    ChildProc := GetChildProcessName(SteamProcPID)
+
+    tempProc := ""
+    for each, proc in ChildProc {
+
+        if (proc != "steamwebhelper.exe") && (proc != "steamservice.exe") && (proc != "GameOverlayUi.exe") {
+            tempProc := proc
+        }
+            
+    }
+
+    if (tempProc != "") {
+        WinGetClass, tempProcClass, ahk_exe %tempProc%
+        return tempProcClass
+    }
+
+    return ""
+}
+
+UpdateGame:
+    if (SteamBigPictureExist()) {
+        TempCurrentlyRunningGame := DetectRunningGame()
+
+        if (TempCurrentlyRunningGame != CurrentlyRunningGame) {
+            CurrentlyRunningGame := TempCurrentlyRunningGame
+        }
+    }    
+    else
+        CurrentlyRunningGame := ""
+    
+    return
+;
 ; QOL Function
 SteamOverlay() {
 
@@ -363,25 +401,3 @@ SaveDesktopIcon:
 
     return
 ;
-; Debug tool
-PrintAppInMonitorThree() {
-    WinGet, id, list
-
-    Loop, %id% {
-        this_ID := id%A_Index%
-        WinGetPos, X, Y, Width, Height, ahk_id %this_ID%
-        WinGetClass, AppClass, ahk_id %this_ID%
-        
-        If (X>3600 and Y>-40)
-        ;If (X > -40 and Y > - 40)  ; Coordinate changes if primary monitor changes, see Autohotkey Spy. X and Y < 0 because fullscreen apps coordinate starts at 0,0
-            MsgBox, %AppClass%
-	    
-    }
-
-    return 0
-}
-
-Print(function) {
-    varToPrint := function
-    MsgBox, %varToPrint%
-}
