@@ -48,7 +48,6 @@ Key Mapping for iPega 9083s Android Mode
 
 */
 STEAM_CLASS := "CUIEngineWin32"
-STEAM_EXE := "steam.exe"
 CurrentlyRunningGame := ""
 
 DesktopIconData := DesktopIcons()
@@ -57,9 +56,10 @@ AlreadyMoved := False
 
 SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
 SetTimer, SaveDesktopIcon, 180000
-SetTimer, UpdateGame, 5000
+SetTimer, UpdateGame, 3000
 
 EnableHotkey:
+
 Joy1::
 App := GetApp()
 ActivateApp(App)
@@ -87,7 +87,7 @@ return
 GetApp() {
     ;Get either Steam Big Picture or the Game name
 
-    if(SteamBigPictureExist()) && (GameInMonitorThreeExist()) {
+    if(SteamBigPictureExist()) && (IsGameExist()) {
         GameClass := GetGame()
         return GameClass
     }
@@ -104,50 +104,20 @@ SteamBigPictureExist() {
     return 0 
 }
 
-GameInMonitorThreeExist() {
-    if (NumAppInMonitorThree() > 2)
+IsGameExist() {
+    global CurrentlyRunningGame
+
+    if (CurrentlyRunningGame != "")
         return 1
 
-    return 0
-}
-
-NumAppInMonitorThree() {
-    AppMonitorThree = 0
-    WinGet, id, list
-
-    Loop, %id% {
-        this_ID := id%A_Index%
-        WinGetPos, X, Y, Width, Height, ahk_id %this_ID%
-
-        If (X>-40 and Y>-40)  ; Coordinate changes if primary monitor changes, see Autohotkey Spy
-            AppMonitorThree += 1
-
-    }
-
-    return AppMonitorThree
+    return 0    
 }
 
 GetGame() {
-    WinGet, id, list
+    global CurrentlyRunningGame
 
-    Loop, %id% {
-        this_ID := id%A_Index%
-        WinGetPos, X, Y, Width, Height, ahk_id %this_ID%
-        WinGetClass, AppClass, ahk_id %this_ID%
-        
-        if (AppClass == "CUIEngineWin32") ; Ignore Steam Big Picture
-            Continue
-
-        If (AppClass == "Shell_TrayWnd") ; Ignore Shell Tray
-            Continue
-
-        If (AppClass == "Shell_SecondaryTrayWnd")
-            Continue
-
-        If (X>-40 and Y>-40)  ; Coordinate changes if primary monitor changes, see Autohotkey Spy. X and Y < 0 because fullscreen apps coordinate starts at 0,0
-            return AppClass
-	    
-    }
+    if (CurrentlyRunningGame != "")
+        return CurrentlyRunningGame
 
     return 0
 }
@@ -383,10 +353,9 @@ MovePrimaryTaskbar() {
 ExitSteam:
     if (SteamBigPictureExist()) {
 
-        if (GameInMonitorThreeExist()) {
+        if (IsGameExist()) {
             Game := GetGame()
             WinKill, ahk_class %Game%
-            WinWaitClose, ahk_class %Game%
         }
 
         WinKill, ahk_class %STEAM_CLASS%
