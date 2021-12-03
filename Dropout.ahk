@@ -58,6 +58,7 @@ AlreadyMoved := False
 SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
 SetTimer, SaveDesktopIcon, 180000
 SetTimer, UpdateGame, 3000
+SetTimer, MoveOtherAppToPrimary, 1000
 
 return
 
@@ -313,7 +314,6 @@ DetectRunningGame() {
     return ""
 }
 
-
 UpdateGame:
     if (SteamBigPictureExist()) {
         TempCurrentlyRunningGame := DetectRunningGame()
@@ -345,6 +345,85 @@ MoveAppToLeft(AppClass) {
 
 }
 
+GrabAllAppAt(xcoord, ycoord) {
+    ;Grab all application at given above coordinate, ignoring Steam Big Picture, shell tray and secondary shell tray
+    AllApp := []
+    WinGet, id, list
+
+    Loop, %id% {
+        this_ID := id%A_Index%
+        WinGetPos, X, Y, Width, Height, ahk_id %this_ID%
+        WinGetClass, AppClass, ahk_id %this_ID%
+        
+        if (AppClass == "CUIEngineWin32") ; Ignore Steam Big Picture
+            Continue
+        else if (AppClass == "Shell_TrayWnd") ; Ignore Shell Tray
+            Continue
+        else if (AppClass == "Shell_SecondaryTrayWnd")
+            Continue
+
+        If (X>xcoord and Y>ycoord)  ; Coordinate changes if primary monitor changes, see Autohotkey Spy. X and Y < 0 because fullscreen apps coordinate starts at 0,0
+            AllApp.Push(AppClass)        
+            
+    }
+
+    if (not (AllApp.Count() == 0))
+        return AllApp
+
+    return 0
+}
+
+NumAppAt(Xcoord, Ycoord) {
+    AppMonitorThree = 0
+    WinGet, id, list
+
+    Loop, %id% {
+        this_ID := id%A_Index%
+        WinGetPos, X, Y, Width, Height, ahk_id %this_ID%
+        WinGetClass, AppClass, ahk_id %this_ID%
+
+        if (AppClass == "CUIEngineWin32") ; Ignore Steam Big Picture
+            Continue
+        else if (AppClass == "Shell_TrayWnd") ; Ignore Shell Tray
+            Continue
+        else if (AppClass == "Shell_SecondaryTrayWnd")
+            Continue
+
+        If (X > Xcoord and Y > Ycoord)  ; Coordinate changes if primary monitor changes, see Autohotkey Spy
+            AppMonitorThree += 1
+
+    }
+
+    return AppMonitorThree
+}
+
+MoveOtherAppToPrimary:
+
+    if (NumAppAt(3560,-40) > 0) {
+        TempAppsClasses := GrabAllAppAt(3560,-40)
+
+        for index, TempAppClass in TempAppsClasses {
+            WinActivate, ahk_class %TempAppClass%
+            SendCtrlWinRight()
+        }
+    }
+    else if (SteamBigPictureExist()) {
+        TempAppsClasses := GrabAllAppAt(-40,-40)
+        TempGameClass := GetGame() 
+
+        for index, TempAppClass in TempAppsClasses
+        {
+            if (TempAppClass == TempGameClass) {
+                Continue
+            }
+                
+            WinActivate, ahk_class %TempAppClass%
+            SendCtrlWinRight()
+        }
+    }
+
+    return
+;
 ; QOL Function
 SteamOverlay() {
 
