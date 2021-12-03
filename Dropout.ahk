@@ -3,6 +3,8 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #SingleInstance Force
+#Include ChildProc.ahk
+#Include EnumProc.ahk
 
 /*
 Version History:
@@ -42,11 +44,12 @@ Key Mapping for iPega 9083s Android Mode
 |              /\       /      \       /\               |
 |             /  '.___.'        '.___.'  \              |
 |            /                            \             |
- \          /                              \           /r
+ \          /                              \           /
   \________/                                \_________/
 
 */
 STEAM_CLASS := "CUIEngineWin32"
+CurrentlyRunningGame := ""
 
 DesktopIconData := DesktopIcons()
 Menu, Tray, Add , &Exit Steam, ExitSteam
@@ -54,9 +57,12 @@ AlreadyMoved := False
 
 SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
 SetTimer, SaveDesktopIcon, 180000
+SetTimer, UpdateGame, 3000
 
+return
 
 EnableHotkey:
+
 Joy1::
 App := GetApp()
 ActivateApp(App)
@@ -84,7 +90,7 @@ return
 GetApp() {
     ;Get either Steam Big Picture or the Game name
 
-    if(SteamBigPictureExist()) && (GameInMonitorThreeExist()) {
+    if(SteamBigPictureExist()) && (IsGameExist()) {
         GameClass := GetGame()
         return GameClass
     }
@@ -101,50 +107,20 @@ SteamBigPictureExist() {
     return 0 
 }
 
-GameInMonitorThreeExist() {
-    if (NumAppInMonitorThree() > 2)
+IsGameExist() {
+    global CurrentlyRunningGame
+
+    if (CurrentlyRunningGame != "")
         return 1
 
-    return 0
-}
-
-NumAppInMonitorThree() {
-    AppMonitorThree = 0
-    WinGet, id, list
-
-    Loop, %id% {
-        this_ID := id%A_Index%
-        WinGetPos, X, Y, Width, Height, ahk_id %this_ID%
-
-        If (X>-40 and Y>-40)  ; Coordinate changes if primary monitor changes, see Autohotkey Spy
-            AppMonitorThree += 1
-
-    }
-
-    return AppMonitorThree
+    return 0    
 }
 
 GetGame() {
-    WinGet, id, list
+    global CurrentlyRunningGame
 
-    Loop, %id% {
-        this_ID := id%A_Index%
-        WinGetPos, X, Y, Width, Height, ahk_id %this_ID%
-        WinGetClass, AppClass, ahk_id %this_ID%
-        
-        if (AppClass == "CUIEngineWin32") ; Ignore Steam Big Picture
-            Continue
-
-        If (AppClass == "Shell_TrayWnd") ; Ignore Shell Tray
-            Continue
-
-        If (AppClass == "Shell_SecondaryTrayWnd")
-            Continue
-
-        If (X>-40 and Y>-40)  ; Coordinate changes if primary monitor changes, see Autohotkey Spy. X and Y < 0 because fullscreen apps coordinate starts at 0,0
-            return AppClass
-	    
-    }
+    if (CurrentlyRunningGame != "")
+        return CurrentlyRunningGame
 
     return 0
 }
@@ -233,6 +209,13 @@ SendCtrlWinRight() {
     Sleep, 100
 }
 
+SendWinShiftLeft() {
+    Send {LWin down}{LShift down}
+    Send {Left}
+    Send {LWin up}{LShift up}
+    Sleep, 100
+}
+
 DesktopIcons(coords="") {
    ;Return desktop icon location if no parameter is given. Else, restore using parameter data.
    ;Credit to Rolz on AHK forum
@@ -286,6 +269,80 @@ DesktopIcons(coords="") {
    }
    DllCall("CloseHandle", "UInt", hProcess)
    return ret
+}
+
+DetectRunningGame() { 
+    WinGet, SteamProcPID, PID, ahk_exe steam.exe
+
+    SteamChildProc := GetChildProcessName(SteamProcPID)
+
+    GameProc := ""
+    for each, proc in SteamChildProc {
+        
+        if (proc != "steamwebhelper.exe") && (proc != "steamservice.exe") && (proc != "GameOverlayUi.exe") && (proc != "steamerrorreporter.exe") {
+            GameProc := proc
+        }
+            
+    }
+
+    if (GameProc != "") {
+        WinGetClass, GameProcClass, ahk_exe %GameProc%
+
+        ; If fail to get class name from process, get its child class. Goes only one level down
+        if (GameProcClass == "") { 
+
+            ;Get Pid of Parent process, and then get its child processes
+            GameProcPID := GetProcessID(GameProc)
+            GameChildProcNames := GetChildProcessName(GameProcPID)
+
+            ;Get the first process of child processes, then get its class name
+            GameChildProcName := GameChildProcNames[1]
+            WinGetClass, GameChildProcClass, ahk_exe %GameChildProcName%
+            
+            if (GameChildProcClass == "") {
+                ;MsgBox % "DropOut: Error in retrieving game " GameProc "." 
+                return ""
+            }
+            else
+                GameProcClass := GameChildProcClass
+        }
+	    
+        return GameProcClass
+    }
+
+    return ""
+}
+
+
+UpdateGame:
+    if (SteamBigPictureExist()) {
+        TempCurrentlyRunningGame := DetectRunningGame()
+
+        if (TempCurrentlyRunningGame != CurrentlyRunningGame) {
+            CurrentlyRunningGame := TempCurrentlyRunningGame
+            MoveAppToLeft(CurrentlyRunningGame)
+        }
+    }    
+    else
+        CurrentlyRunningGame := ""
+    
+    return
+;
+MoveAppToLeft(AppClass) {
+    PathToAppList := A_ScriptDir "\AppList.txt"
+    WinGet, AppExe, ProcessName, ahk_class %AppClass%
+
+    if !FileExist(PathToAppList)
+        return
+
+    Loop, read, %PathToAppList% 
+    {
+        if (AppExe == A_LoopReadLine) {
+            WinActivate, ahk_class %AppClass%
+            SendWinShiftLeft()
+        }
+    }
+
 }
 
 ; QOL Function
@@ -345,10 +402,9 @@ MovePrimaryTaskbar() {
 ExitSteam:
     if (SteamBigPictureExist()) {
 
-        if (GameInMonitorThreeExist()) {
+        if (IsGameExist()) {
             Game := GetGame()
             WinKill, ahk_class %Game%
-            WinWaitClose, ahk_class %Game%
         }
 
         WinKill, ahk_class %STEAM_CLASS%
@@ -363,25 +419,3 @@ SaveDesktopIcon:
 
     return
 ;
-; Debug tool
-PrintAppInMonitorThree() {
-    WinGet, id, list
-
-    Loop, %id% {
-        this_ID := id%A_Index%
-        WinGetPos, X, Y, Width, Height, ahk_id %this_ID%
-        WinGetClass, AppClass, ahk_id %this_ID%
-        
-        If (X>3600 and Y>-40)
-        ;If (X > -40 and Y > - 40)  ; Coordinate changes if primary monitor changes, see Autohotkey Spy. X and Y < 0 because fullscreen apps coordinate starts at 0,0
-            MsgBox, %AppClass%
-	    
-    }
-
-    return 0
-}
-
-Print(function) {
-    varToPrint := function
-    MsgBox, %varToPrint%
-}
