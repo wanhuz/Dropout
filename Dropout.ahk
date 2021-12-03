@@ -4,6 +4,7 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #SingleInstance Force
 #Include ChildProc.ahk
+#Include EnumProc.ahk
 
 /*
 Version History:
@@ -43,7 +44,7 @@ Key Mapping for iPega 9083s Android Mode
 |              /\       /      \       /\               |
 |             /  '.___.'        '.___.'  \              |
 |            /                            \             |
- \          /                              \           /r
+ \          /                              \           /
   \________/                                \_________/
 
 */
@@ -57,6 +58,8 @@ AlreadyMoved := False
 SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
 SetTimer, SaveDesktopIcon, 180000
 SetTimer, UpdateGame, 3000
+
+return
 
 EnableHotkey:
 
@@ -206,6 +209,13 @@ SendCtrlWinRight() {
     Sleep, 100
 }
 
+SendWinShiftLeft() {
+    Send {LWin down}{LShift down}
+    Send {Left}
+    Send {LWin up}{LShift up}
+    Sleep, 100
+}
+
 DesktopIcons(coords="") {
    ;Return desktop icon location if no parameter is given. Else, restore using parameter data.
    ;Credit to Rolz on AHK forum
@@ -264,24 +274,45 @@ DesktopIcons(coords="") {
 DetectRunningGame() { 
     WinGet, SteamProcPID, PID, ahk_exe steam.exe
 
-    ChildProc := GetChildProcessName(SteamProcPID)
+    SteamChildProc := GetChildProcessName(SteamProcPID)
 
-    tempProc := ""
-    for each, proc in ChildProc {
-
-        if (proc != "steamwebhelper.exe") && (proc != "steamservice.exe") && (proc != "GameOverlayUi.exe") {
-            tempProc := proc
+    GameProc := ""
+    for each, proc in SteamChildProc {
+        
+        if (proc != "steamwebhelper.exe") && (proc != "steamservice.exe") && (proc != "GameOverlayUi.exe") && (proc != "steamerrorreporter.exe") {
+            GameProc := proc
         }
             
     }
 
-    if (tempProc != "") {
-        WinGetClass, tempProcClass, ahk_exe %tempProc%
-        return tempProcClass
+    if (GameProc != "") {
+        WinGetClass, GameProcClass, ahk_exe %GameProc%
+
+        ; If fail to get class name from process, get its child class. Goes only one level down
+        if (GameProcClass == "") { 
+
+            ;Get Pid of Parent process, and then get its child processes
+            GameProcPID := GetProcessID(GameProc)
+            GameChildProcNames := GetChildProcessName(GameProcPID)
+
+            ;Get the first process of child processes, then get its class name
+            GameChildProcName := GameChildProcNames[1]
+            WinGetClass, GameChildProcClass, ahk_exe %GameChildProcName%
+            
+            if (GameChildProcClass == "") {
+                ;MsgBox % "DropOut: Error in retrieving game " GameProc "." 
+                return ""
+            }
+            else
+                GameProcClass := GameChildProcClass
+        }
+	    
+        return GameProcClass
     }
 
     return ""
 }
+
 
 UpdateGame:
     if (SteamBigPictureExist()) {
@@ -289,6 +320,7 @@ UpdateGame:
 
         if (TempCurrentlyRunningGame != CurrentlyRunningGame) {
             CurrentlyRunningGame := TempCurrentlyRunningGame
+            MoveAppToLeft(CurrentlyRunningGame)
         }
     }    
     else
@@ -296,6 +328,23 @@ UpdateGame:
     
     return
 ;
+MoveAppToLeft(AppClass) {
+    PathToAppList := A_ScriptDir "\AppList.txt"
+    WinGet, AppExe, ProcessName, ahk_class %AppClass%
+
+    if !FileExist(PathToAppList)
+        return
+
+    Loop, read, %PathToAppList% 
+    {
+        if (AppExe == A_LoopReadLine) {
+            WinActivate, ahk_class %AppClass%
+            SendWinShiftLeft()
+        }
+    }
+
+}
+
 ; QOL Function
 SteamOverlay() {
 
