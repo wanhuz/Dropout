@@ -1,2 +1,5 @@
 Muv-Luv_Alternative16.exe
 muvluv16.exe
+Muv-Luv_PM.exe
+SSELauncher.exe
+SmartSteamLoader_muvluvp.exe

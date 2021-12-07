@@ -3,16 +3,9 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #SingleInstance Force
-#Include ChildProc.ahk
-#Include EnumProc.ahk
+#Include Process.ahk
 
 /*
-Version History:
-15/11/21 - Improved moving taskbar
-18/11/21 - Fix existing folder explorer starting at Monitor 3
-19/11/21 - Add Tray menu to exit Steam Big Picture and Game from Desktop
-19/11/21 - Save and load original monitor desktop icon location
-
 . This script is a best-effort approach to virtualize third virtual monitor. 
 . Best-effort means it will try it best to seperate third monitor from the rest of the system, but it will not be perfect due to WinApi limitation
 . This script works with assumption that Big Picture is used on rightmost monitor, which is primary monitor when launched
@@ -55,9 +48,9 @@ DesktopIconData := DesktopIcons()
 Menu, Tray, Add , &Exit Steam, ExitSteam
 AlreadyMoved := False
 
-SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
+;SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
 SetTimer, SaveDesktopIcon, 180000
-SetTimer, UpdateGame, 3000
+;SetTimer, UpdateGameLabel, 3000
 SetTimer, MoveOtherAppToPrimary, 1000
 
 return
@@ -314,7 +307,13 @@ DetectRunningGame() {
     return ""
 }
 
-UpdateGame:
+UpdateGameLabel:
+    UpdateGame()
+    return
+;
+UpdateGame() {
+    global CurrentlyRunningGame
+
     if (SteamBigPictureExist()) {
         TempCurrentlyRunningGame := DetectRunningGame()
 
@@ -327,7 +326,8 @@ UpdateGame:
         CurrentlyRunningGame := ""
     
     return
-;
+}
+
 MoveAppToLeft(AppClass) {
     PathToAppList := A_ScriptDir "\AppList.txt"
     WinGet, AppExe, ProcessName, ahk_class %AppClass%
@@ -338,6 +338,7 @@ MoveAppToLeft(AppClass) {
     Loop, read, %PathToAppList% 
     {
         if (AppExe == A_LoopReadLine) {
+            MsgBox %AppExe%
             WinActivate, ahk_class %AppClass%
             SendWinShiftLeft()
         }
@@ -360,6 +361,8 @@ GrabAllAppAt(xcoord, ycoord) {
         else if (AppClass == "Shell_TrayWnd") ; Ignore Shell Tray
             Continue
         else if (AppClass == "Shell_SecondaryTrayWnd")
+            Continue
+        else if (AppClass == "Internet Explorer_Hidden")
             Continue
 
         If (X>xcoord and Y>ycoord)  ; Coordinate changes if primary monitor changes, see Autohotkey Spy. X and Y < 0 because fullscreen apps coordinate starts at 0,0
@@ -401,14 +404,20 @@ MoveOtherAppToPrimary:
 
     if (NumAppAt(3560,-40) > 0) {
         TempAppsClasses := GrabAllAppAt(3560,-40)
-
+        
         for index, TempAppClass in TempAppsClasses {
+            
             WinActivate, ahk_class %TempAppClass%
             SendCtrlWinRight()
         }
     }
     else if (SteamBigPictureExist()) {
         TempAppsClasses := GrabAllAppAt(-40,-40)
+
+        if (TempAppsClasses == 0) 
+            return
+        
+        UpdateGame()
         TempGameClass := GetGame() 
 
         for index, TempAppClass in TempAppsClasses
