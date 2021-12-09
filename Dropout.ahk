@@ -5,6 +5,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #SingleInstance Force
 #Include ChildProc.ahk
 #Include EnumProc.ahk
+#Include %A_ScriptDir%\lib\SoundVolumeView\SoundVolumeView.ahk
 
 /*
 Version History:
