@@ -12,3 +12,4 @@ Features:
 - Restore desktop icon and main taskbar even if the first monitor is not main monitor
 - Specify game to move to virtual monitor if the game did not open in main monitor
 - Exit Steam Big Picture and game through system tray menu
+- Keep pesky unrelated program from interfering with game session
