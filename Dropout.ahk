@@ -48,9 +48,8 @@ DesktopIconData := DesktopIcons()
 Menu, Tray, Add , &Exit Steam, ExitSteam
 AlreadyMoved := False
 
-;SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
+SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
 SetTimer, SaveDesktopIcon, 180000
-;SetTimer, UpdateGameLabel, 3000
 SetTimer, MoveOtherAppToPrimary, 1000
 
 return
@@ -307,11 +306,8 @@ DetectRunningGame() {
     return ""
 }
 
-UpdateGameLabel:
-    UpdateGame()
-    return
-;
 UpdateGame() {
+    ; Detect and return game class if launched, also move the game to the left if specified in Applist.txt
     global CurrentlyRunningGame
 
     if (SteamBigPictureExist()) {
@@ -338,7 +334,6 @@ MoveAppToLeft(AppClass) {
     Loop, read, %PathToAppList% 
     {
         if (AppExe == A_LoopReadLine) {
-            MsgBox %AppExe%
             WinActivate, ahk_class %AppClass%
             SendWinShiftLeft()
         }
@@ -402,7 +397,7 @@ NumAppAt(Xcoord, Ycoord) {
 
 MoveOtherAppToPrimary:
 
-    if (NumAppAt(3560,-40) > 0) {
+    if (NumAppAt(3560,-40) > 0) && (not (SteamBigPictureExist())) {
         TempAppsClasses := GrabAllAppAt(3560,-40)
         
         for index, TempAppClass in TempAppsClasses {
@@ -412,15 +407,15 @@ MoveOtherAppToPrimary:
         }
     }
     else if (SteamBigPictureExist()) {
-        TempAppsClasses := GrabAllAppAt(-40,-40)
+        TempAppsClass := GrabAllAppAt(-40,-40)
+        UpdateGame()
 
-        if (TempAppsClasses == 0) 
+        if (TempAppsClass == 0)
             return
         
-        UpdateGame()
         TempGameClass := GetGame() 
 
-        for index, TempAppClass in TempAppsClasses
+        for index, TempAppClass in TempAppsClass
         {
             if (TempAppClass == TempGameClass) {
                 Continue
