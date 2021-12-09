@@ -1,6 +1,6 @@
 # Dropout
 
-***Work in Progress - It works on my PC but not sure for others***
+***Work in Progress - It works on my PC but not for others; Modify the script and use at own risks***
 
 Jack-of-all-trade tools to stream Steam Big Picture on virtual monitor (using dummy plug) while make it possible to use PC at the same time.
 
