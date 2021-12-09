@@ -9,7 +9,7 @@ Features:
 - Controller hotkey to toggle Steam Overlay.
 - Controller hotkey to reset Steam Controller (in case of controller disconnected/crash).
 - Controller hotkey to quickly close game.
-- Restore desktop icon and main taskbar even if the first monitor is not main monitor.
-- Specify game to move to virtual monitor if the game did not open in main monitor.
+- Restore desktop icon and main taskbar even if the the display setting is changed.
+- Specify game to move to virtual monitor if the game is not launched in main monitor.
 - Exit Steam Big Picture and game through system tray menu.
-- Keep pesky unrelated program from interfering with game session.
+- Keep pesky unrelated program from interfering with gaming session.
