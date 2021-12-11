@@ -61,7 +61,7 @@ GameStarted := False
 DefaultOutputDevice := """Realtek High Definition Audio\Device\Speakers\Render"""
 TargetOutputDevice := """VB-Audio Virtual Cable\Device\CABLE Input\Render"""
 
-;SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
+SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
 SetTimer, SaveDesktopIcon, 180000
 SetTimer, UpdateGame, 3000
 
@@ -338,8 +338,12 @@ UpdateGame:
         ;
         TempCurrentlyRunningGameProcess := DetectRunningGame()
 
-        if (TempCurrentlyRunningGameProcess == 0)
+        if (TempCurrentlyRunningGameProcess == 0) {
+            CurrentlyRunningGame := ""
+            CurrentlyRunningGameProcess := ""
             return
+        }
+            
 
         TempCurrentlyRunningGame := GetProcessClass(TempCurrentlyRunningGameProcess)
 
