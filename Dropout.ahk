@@ -51,12 +51,17 @@ Key Mapping for iPega 9083s Android Mode
 */
 STEAM_CLASS := "CUIEngineWin32"
 CurrentlyRunningGame := ""
+CurrentlyRunningGameProcess := ""
 
 DesktopIconData := DesktopIcons()
 Menu, Tray, Add , &Exit Steam, ExitSteam
 AlreadyMoved := False
+SteamStarted := False
+GameStarted := False
+DefaultOutputDevice := """Realtek High Definition Audio\Device\Speakers\Render"""
+TargetOutputDevice := """VB-Audio Virtual Cable\Device\CABLE Input\Render"""
 
-SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
+;SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
 SetTimer, SaveDesktopIcon, 180000
 SetTimer, UpdateGame, 3000
 
@@ -286,46 +291,89 @@ DetectRunningGame() {
             
     }
 
-    if (GameProc != "") {
-        WinGetClass, GameProcClass, ahk_exe %GameProc%
-
-        ; If fail to get class name from process, get its child class. Goes only one level down
-        if (GameProcClass == "") { 
-
-            ;Get Pid of Parent process, and then get its child processes
-            GameProcPID := GetProcessID(GameProc)
-            GameChildProcNames := GetChildProcessName(GameProcPID)
-
-            ;Get the first process of child processes, then get its class name
-            GameChildProcName := GameChildProcNames[1]
-            WinGetClass, GameChildProcClass, ahk_exe %GameChildProcName%
-            
-            if (GameChildProcClass == "") {
-                ;MsgBox % "DropOut: Error in retrieving game " GameProc "." 
-                return ""
-            }
-            else
-                GameProcClass := GameChildProcClass
-        }
-	    
-        return GameProcClass
+    if (GameProc == "") {
+        ;MsgBox % "DropOut: Error in retrieving game process: " GameProc "." 
+        return 0
     }
 
-    return ""
+    WinGetClass, ProcClass, ahk_exe %GameProc%
+
+    ; If fail to get class name from process, get its child class. Goes only one level down
+    if (ProcClass == "") { 
+
+        ;Get Pid of Parent process, and then get its child processes
+        ProcPID := GetProcessID(GameProc)
+        ChildProcNames := GetChildProcessName(ProcPID)
+        
+        ;Get the first process of child processes, then get its class name
+        GameProc := ChildProcNames[1]
+
+    }
+
+    return GameProc
+}
+
+GetProcessClass(ProcName) {
+        WinGetClass, ProcClass, ahk_exe %ProcName%
+
+        if (ProcClass == "") { 
+            ;MsgBox % "DropOut: Error in retrieving game class: " ProcName "." 
+            return ""
+        }
+
+        return ProcClass
 }
 
 
 UpdateGame:
     if (SteamBigPictureExist()) {
-        TempCurrentlyRunningGame := DetectRunningGame()
+
+        if (SteamStarted == False) {
+            steamProcess := "steam.exe"
+
+            SetDefaultPlaybackOutput(DefaultOutputDevice)
+            SetProcessOutput(TargetOutputDevice, steamProcess)
+            SteamStarted := True
+        }
+        ;
+        TempCurrentlyRunningGameProcess := DetectRunningGame()
+
+        if (TempCurrentlyRunningGameProcess == 0)
+            return
+
+        TempCurrentlyRunningGame := GetProcessClass(TempCurrentlyRunningGameProcess)
 
         if (TempCurrentlyRunningGame != CurrentlyRunningGame) {
+
+            if (CurrentlyRunningGame != "") { ; Reset old app audio
+                SetDefaultProcessOutput(CurrentlyRunningGameProcess)
+            }
+
+            CurrentlyRunningGameProcess := TempCurrentlyRunningGameProcess
             CurrentlyRunningGame := TempCurrentlyRunningGame
             MoveAppToLeft(CurrentlyRunningGame)
+
+            ;Set audio
+            SetDefaultPlaybackOutput(TargetOutputDevice)
+            SetProcessOutput(TargetOutputDevice, CurrentlyRunningGameProcess)
+            SetDefaultPlaybackOutput(DefaultOutputDevice)
         }
-    }    
-    else
+        ;
+    } 
+    else {
+        if (SteamStarted == True) {
+            steamProcess := "steam.exe"
+
+            SetDefaultPlaybackOutput(DefaultOutputDevice)
+            SetDefaultProcessOutput(steamProcess)
+            SteamStarted := False
+        }
+
         CurrentlyRunningGame := ""
+        CurrentlyRunningGameProcess := ""
+        
+    }
+        
     
     return
 ;

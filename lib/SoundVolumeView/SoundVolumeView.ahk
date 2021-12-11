@@ -6,15 +6,25 @@ TestApp := """Discord.exe"""
 SetProcessOutput(Device, TestApp)
 */
 
+GetSoundViewPath() {
+    Path := "\lib\SoundVolumeView\SoundVolumeView.exe"
+    Path := A_ScriptDir Path
+    ;verify program exist
+    return Path
+}
 
 SetDefaultPlaybackOutput(outputDevice) {
-    RunWait, %ComSpec% /c SoundVolumeView.exe /SetDefault %outputDevice% all, , Hide
+    path := GetSoundViewPath()
+    RunWait, %ComSpec% /c %path% /SetDefault %outputDevice% all, , Hide
 }
 
 SetDefaultProcessOutput(targetProcess) {
-    RunWait, %ComSpec% /c SoundVolumeView.exe /SetAppDefault DefaultRenderDevice all %targetProcess%, , Hide
+    path := GetSoundViewPath()
+    RunWait, %ComSpec% /c %path% /SetAppDefault DefaultRenderDevice all %targetProcess%, , Hide
 }
 
 SetProcessOutput(outputDevice, targetProcess) {
-    RunWait, %ComSpec% /c SoundVolumeView.exe /SetAppDefault %outputDevice% all %targetProcess%, , Hide
+    path := GetSoundViewPath()
+    RunWait, %ComSpec% /c %path% /SetAppDefault %outputDevice% all %targetProcess%, , Hide
 }
+
