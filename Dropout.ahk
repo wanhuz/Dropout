@@ -3,17 +3,11 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #SingleInstance Force
-#Include ChildProc.ahk
-#Include EnumProc.ahk
+
+#Include Process.ahk
 #Include %A_ScriptDir%\lib\SoundVolumeView\SoundVolumeView.ahk
 
 /*
-Version History:
-15/11/21 - Improved moving taskbar
-18/11/21 - Fix existing folder explorer starting at Monitor 3
-19/11/21 - Add Tray menu to exit Steam Big Picture and Game from Desktop
-19/11/21 - Save and load original monitor desktop icon location
-
 . This script is a best-effort approach to virtualize third virtual monitor. 
 . Best-effort means it will try it best to seperate third monitor from the rest of the system, but it will not be perfect due to WinApi limitation
 . This script works with assumption that Big Picture is used on rightmost monitor, which is primary monitor when launched
@@ -61,9 +55,9 @@ GameStarted := False
 DefaultOutputDevice := """Realtek High Definition Audio\Device\Speakers\Render"""
 TargetOutputDevice := """VB-Audio Virtual Cable\Device\CABLE Input\Render"""
 
-;SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
+SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
 SetTimer, SaveDesktopIcon, 180000
-SetTimer, UpdateGame, 3000
+SetTimer, MoveOtherAppToPrimary, 1000
 
 return
 
@@ -324,8 +318,10 @@ GetProcessClass(ProcName) {
         return ProcClass
 }
 
+UpdateGame() {
+    ; Detect and return game class if launched, also move the game to the left if specified in Applist.txt
+    global CurrentlyRunningGame
 
-UpdateGame:
     if (SteamBigPictureExist()) {
 
         if (SteamStarted == False) {
@@ -376,7 +372,8 @@ UpdateGame:
         
     
     return
-;
+}
+
 MoveAppToLeft(AppClass) {
     PathToAppList := A_ScriptDir "\AppList.txt"
     WinGet, AppExe, ProcessName, ahk_class %AppClass%
@@ -394,6 +391,93 @@ MoveAppToLeft(AppClass) {
 
 }
 
+GrabAllAppAt(xcoord, ycoord) {
+    ;Grab all application at given above coordinate, ignoring Steam Big Picture, shell tray and secondary shell tray
+    AllApp := []
+    WinGet, id, list
+
+    Loop, %id% {
+        this_ID := id%A_Index%
+        WinGetPos, X, Y, Width, Height, ahk_id %this_ID%
+        WinGetClass, AppClass, ahk_id %this_ID%
+        
+        if (AppClass == "CUIEngineWin32") ; Ignore Steam Big Picture
+            Continue
+        else if (AppClass == "Shell_TrayWnd") ; Ignore Shell Tray
+            Continue
+        else if (AppClass == "Shell_SecondaryTrayWnd")
+            Continue
+        else if (AppClass == "Internet Explorer_Hidden")
+            Continue
+
+        If (X>xcoord and Y>ycoord)  ; Coordinate changes if primary monitor changes, see Autohotkey Spy. X and Y < 0 because fullscreen apps coordinate starts at 0,0
+            AllApp.Push(AppClass)        
+            
+    }
+
+    if (not (AllApp.Count() == 0))
+        return AllApp
+
+    return 0
+}
+
+NumAppAt(Xcoord, Ycoord) {
+    AppMonitorThree = 0
+    WinGet, id, list
+
+    Loop, %id% {
+        this_ID := id%A_Index%
+        WinGetPos, X, Y, Width, Height, ahk_id %this_ID%
+        WinGetClass, AppClass, ahk_id %this_ID%
+
+        if (AppClass == "CUIEngineWin32") ; Ignore Steam Big Picture
+            Continue
+        else if (AppClass == "Shell_TrayWnd") ; Ignore Shell Tray
+            Continue
+        else if (AppClass == "Shell_SecondaryTrayWnd")
+            Continue
+
+        If (X > Xcoord and Y > Ycoord)  ; Coordinate changes if primary monitor changes, see Autohotkey Spy
+            AppMonitorThree += 1
+
+    }
+
+    return AppMonitorThree
+}
+
+MoveOtherAppToPrimary:
+
+    if (NumAppAt(3560,-40) > 0) && (not (SteamBigPictureExist())) {
+        TempAppsClasses := GrabAllAppAt(3560,-40)
+        
+        for index, TempAppClass in TempAppsClasses {
+            
+            WinActivate, ahk_class %TempAppClass%
+            SendCtrlWinRight()
+        }
+    }
+    else if (SteamBigPictureExist()) {
+        TempAppsClass := GrabAllAppAt(-40,-40)
+        UpdateGame()
+
+        if (TempAppsClass == 0)
+            return
+        
+        TempGameClass := GetGame() 
+
+        for index, TempAppClass in TempAppsClass
+        {
+            if (TempAppClass == TempGameClass) {
+                Continue
+            }
+                
+            WinActivate, ahk_class %TempAppClass%
+            SendCtrlWinRight()
+        }
+    }
+
+    return
+;
 ; QOL Function
 SteamOverlay() {
 
