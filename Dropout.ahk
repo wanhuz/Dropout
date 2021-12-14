@@ -28,10 +28,11 @@ Note:
 
 */
 STEAM_CLASS := "CUIEngineWin32"
-CurrentlyRunningGame := ""
+CurrentlyRunningGameClass := ""
 CurrentlyRunningGameProcess := ""
 AlreadyMoved := False
 SteamStarted := False
+NewGameExist := False
 
 DesktopIconData := DesktopIcons()
 Menu, Tray, Add , &Exit Steam, ExitSteam
@@ -95,6 +96,7 @@ SwitchPrimaryTaskbarToFirstDisplay:
 ;
 UpdateAudio:
     if (SteamBigPictureExist()) {
+
         if (SteamStarted == False) {
             steamProcess := "steam.exe"
 
@@ -102,6 +104,19 @@ UpdateAudio:
             SetProcessOutput(TargetOutputDevice, steamProcess)
             SteamStarted := True
         }
+
+        if (NewGameExist) {
+
+            if (CurrentlyRunningGameClass != "") { ; Reset old app audio
+                SetDefaultProcessOutput(CurrentlyRunningGameProcess)
+            }
+
+            ; Set default playback to target first, change the app playback, then set to default playback output. It works this way because idk Windows.
+            SetDefaultPlaybackOutput(TargetOutputDevice)
+            SetProcessOutput(TargetOutputDevice, CurrentlyRunningGameProcess)
+            SetDefaultPlaybackOutput(DefaultOutputDevice)
+        }
+
     }
     else {
         if (SteamStarted == True) {
@@ -114,48 +129,38 @@ UpdateAudio:
         }
     }
     return
-
+;
 UpdateGame() {
     ; Detect and return game class if launched, also move the game to the left if specified in Applist.txt
-    global SteamStarted
-    global CurrentlyRunningGame
+    global CurrentlyRunningGameClass
     global CurrentlyRunningGameProcess
-    global TargetOutputDevice
-    global DefaultOutputDevice
+    global NewGameExist
 
     if (SteamBigPictureExist()) {
 
         TempCurrentlyRunningGameProcess := GetRunningGame()
 
         if (TempCurrentlyRunningGameProcess == 0) {
-            CurrentlyRunningGame := ""
+            CurrentlyRunningGameClass := ""
             CurrentlyRunningGameProcess := ""
             return
         }
             
 
-        TempCurrentlyRunningGame := GetProcessClass(TempCurrentlyRunningGameProcess)
+        TempCurrentlyRunningGameClass := GetProcessClass(TempCurrentlyRunningGameProcess)
 
-        if (TempCurrentlyRunningGame != CurrentlyRunningGame) {
+        if (TempCurrentlyRunningGameClass != CurrentlyRunningGameClass) {
             
-            if (CurrentlyRunningGame != "") { ; Reset old app audio
-                SetDefaultProcessOutput(CurrentlyRunningGameProcess)
-            }
-
             CurrentlyRunningGameProcess := TempCurrentlyRunningGameProcess
-            CurrentlyRunningGame := TempCurrentlyRunningGame
+            CurrentlyRunningGameClass := TempCurrentlyRunningGameClass
+            NewGameExist := True
             
-            MoveAppToLeft(CurrentlyRunningGame)
+            MoveAppToLeft(CurrentlyRunningGameClass)
 
-            ;Set audio
-            SetDefaultPlaybackOutput(TargetOutputDevice)
-            SetProcessOutput(TargetOutputDevice, CurrentlyRunningGameProcess)
-            SetDefaultPlaybackOutput(DefaultOutputDevice)
         }
-        ;
     } 
     else {
-        CurrentlyRunningGame := ""
+        CurrentlyRunningGameClass := ""
         CurrentlyRunningGameProcess := ""
     }
         
