@@ -320,7 +320,12 @@ GetProcessClass(ProcName) {
 
 UpdateGame() {
     ; Detect and return game class if launched, also move the game to the left if specified in Applist.txt
+    global SteamStarted
+    global GameStarted
     global CurrentlyRunningGame
+    global CurrentlyRunningGameProcess
+    global TargetOutputDevice
+    global DefaultOutputDevice
 
     if (SteamBigPictureExist()) {
 
@@ -344,13 +349,14 @@ UpdateGame() {
         TempCurrentlyRunningGame := GetProcessClass(TempCurrentlyRunningGameProcess)
 
         if (TempCurrentlyRunningGame != CurrentlyRunningGame) {
-
+            
             if (CurrentlyRunningGame != "") { ; Reset old app audio
                 SetDefaultProcessOutput(CurrentlyRunningGameProcess)
             }
 
             CurrentlyRunningGameProcess := TempCurrentlyRunningGameProcess
             CurrentlyRunningGame := TempCurrentlyRunningGame
+            
             MoveAppToLeft(CurrentlyRunningGame)
 
             ;Set audio
@@ -364,6 +370,7 @@ UpdateGame() {
         if (SteamStarted == True) {
             steamProcess := "steam.exe"
 
+            Sleep, 5000
             SetDefaultPlaybackOutput(DefaultOutputDevice)
             SetDefaultProcessOutput(steamProcess)
             SteamStarted := False
