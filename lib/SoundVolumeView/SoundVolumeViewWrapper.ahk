@@ -28,3 +28,12 @@ SetProcessOutput(outputDevice, targetProcess) {
     RunWait, %ComSpec% /c %path% /SetAppDefault %outputDevice% all %targetProcess%, , Hide
 }
 
+DisableOutputDevice(outputDevice) {
+    path := GetSoundViewPath()
+    RunWait, %ComSpec% /c %path% /Disable %outputDevice%, , Hide
+}
+
+EnableOutputDevice(outputDevice) {
+    path := GetSoundViewPath()
+    RunWait, %ComSpec% /c %path% /Enable %outputDevice%, , Hide
+}
