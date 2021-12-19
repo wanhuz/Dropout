@@ -15,7 +15,6 @@ SteamOverlay() {
 KillGame(game) {
 
     while GetKeyState("Joy14", "P") {
-        MsgBox % "Trying to kill "  game
         WinKill, ahk_class %game%
         Sleep, 1000
 

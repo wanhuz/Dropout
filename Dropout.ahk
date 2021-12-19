@@ -9,7 +9,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #Include %A_ScriptDir%\lib\Dropout\script-helper.ahk
 #Include %A_ScriptDir%\lib\Dropout\virtualization.ahk
 #Include %A_ScriptDir%\lib\Dropout\quality-of-life.ahk
-#Include %A_ScriptDir%\lib\SoundVolumeView\SoundVolumeView.ahk
+#Include %A_ScriptDir%\lib\SoundVolumeView\SoundVolumeViewWrapper.ahk
 
 /*
 . This script is a best-effort approach to virtualize third virtual monitor. 
@@ -25,6 +25,7 @@ Script work:
     - KillApp will work better if the script is run as admin (terminate hanging game if issue happens)
 
 */
+
 STEAM_CLASS := "CUIEngineWin32"
 STEAM_PROCESS := "steam.exe"
 
