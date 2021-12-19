@@ -13,7 +13,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 /*
 . This script is a best-effort approach to virtualize third virtual monitor. 
-. Best-effort means it will try it best to seperate third monitor from the rest of the system, but it will not be perfect due to WinApi limitation
+. Best-effort means it will try it best to seperate third monitor from the rest of the system, but it will not be perfect due to Windows limitation
 . This script works with assumption that Big Picture is used on rightmost monitor, which is primary monitor when launched
 . There is only three Apps running on rightmost monitor, first is Steam Big Picture, Windows Tray and the game
 
@@ -22,17 +22,19 @@ Script work:
 	- When script activated after starting Big Picture
 	- Changed default USB controller to iPega
     - Script doesn't work if default Windows Controller is not iPega before starting Big Picture
-
-Note:
     - KillApp will work better if the script is run as admin (terminate hanging game if issue happens)
 
 */
 STEAM_CLASS := "CUIEngineWin32"
+STEAM_PROCESS := "steam.exe"
+
+OldGameProcess := ""
 CurrentlyRunningGameClass := ""
 CurrentlyRunningGameProcess := ""
-AlreadyMoved := False
-SteamStarted := False
-NewGameExist := False
+TaskbarAlreadyMoved := False
+SteamAudioSwitch := False
+UpdateNewGameAudio := False
+UpdateNewGamePosition := False
 
 DesktopIconData := DesktopIcons()
 Menu, Tray, Add , &Exit Steam, ExitSteam
@@ -40,191 +42,151 @@ Menu, Tray, Add , &Exit Steam, ExitSteam
 DefaultOutputDevice := """Realtek High Definition Audio\Device\Speakers\Render"""
 TargetOutputDevice := """VB-Audio Virtual Cable\Device\CABLE Input\Render"""
 
-SetTimer, SwitchPrimaryTaskbarToFirstDisplay, 3000
+SetTimer, UpdateApps, 100
+SetTimer, UpdateTaskbar, 1000
+SetTimer, UpdateAudio, 100 ; Need to be fast because some game set default audio at runtime and cannot be changed
+SetTimer, UpdateGameSettings, 1000
 SetTimer, SaveDesktopIcon, 180000
-SetTimer, MoveOtherAppToPrimary, 1000
-SetTimer, UpdateAudio, 3000
+
 
 return
 
 EnableHotkey:
 
 Joy1::
-App := GetApp()
+App := GetApp(CurrentlyRunningGameClass)
 ActivateApp(App)
 SteamOverlay()
 return 
 
 Joy2::
-App := GetApp()
+App := GetApp(CurrentlyRunningGameClass)
 ActivateApp(App)
 ResetController(App)
 return 
 
 Joy3::
-App := GetApp()
+App := GetApp(CurrentlyRunningGameClass)
 ActivateApp(App)
 KillGame(App)
 return 
 
 Joy4::
-App := GetApp()
+App := GetApp(CurrentlyRunningGameClass)
 ActivateApp(App)
 return
 
-SwitchPrimaryTaskbarToFirstDisplay:
+UpdateTaskbar:
 
-    If (SteamBigPictureExist()) && (AlreadyMoved == False) {
-        Steam := "CUIEngineWin32"
-
+    If (SteamBigPictureExist()) && (TaskbarAlreadyMoved == False) {
         BlockInput, On
         DisableAllHotkey()
 	    Sleep, 200
 
         MovePrimaryTaskbar()
-        AlreadyMoved := True
+        TaskbarAlreadyMoved := True
         DesktopIcons(DesktopIconData)
-        ActivateApp(Steam)
+        ActivateApp(STEAM_CLASS)
 
         EnableAllHotkey()
+        Gosub, EnableHotkey
         BlockInput, Off
     }
-    else if (Not (SteamBigPictureExist())) && (AlreadyMoved == True)
-        AlreadyMoved := False
+    else if (Not (SteamBigPictureExist())) && (TaskbarAlreadyMoved == True)
+        TaskbarAlreadyMoved := False
 
     return
 ;
 UpdateAudio:
     if (SteamBigPictureExist()) {
 
-        if (SteamStarted == False) {
-            steamProcess := "steam.exe"
+        if (SteamAudioSwitch == False) {
 
             SetDefaultPlaybackOutput(DefaultOutputDevice)
-            SetProcessOutput(TargetOutputDevice, steamProcess)
-            SteamStarted := True
+            SetProcessOutput(TargetOutputDevice, STEAM_PROCESS)
+            SteamAudioSwitch := True
         }
 
-        if (NewGameExist) {
+        if (OldGameProcess != "") { ; Reset old app audio. This doesn't work because SoundVolumeView cannot change setting for closed program. I'll leave it here for future fix.
+            SetProcessOutput(DefaultOutputDevice, OldGameProcess)
+            OldGameProcess := ""
+        }
 
-            if (CurrentlyRunningGameClass != "") { ; Reset old app audio
-                SetDefaultProcessOutput(CurrentlyRunningGameProcess)
-            }
+        if (UpdateNewGameAudio) {
 
             ; Set default playback to target first, change the app playback, then set to default playback output. It works this way because idk Windows.
             SetDefaultPlaybackOutput(TargetOutputDevice)
             SetProcessOutput(TargetOutputDevice, CurrentlyRunningGameProcess)
             SetDefaultPlaybackOutput(DefaultOutputDevice)
+
+            UpdateNewGameAudio := False
         }
 
     }
     else {
-        if (SteamStarted == True) {
-            steamProcess := "steam.exe"
+        if (SteamAudioSwitch == True) {
 
-            Sleep, 5000
+            Sleep, 10000
             SetDefaultPlaybackOutput(DefaultOutputDevice)
-            SetDefaultProcessOutput(steamProcess)
-            SteamStarted := False
+            SetDefaultProcessOutput(STEAM_PROCESS)
+            SteamAudioSwitch := False
         }
     }
     return
 ;
-UpdateGame() {
-    ; Detect and return game class if launched, also move the game to the left if specified in Applist.txt
-    global CurrentlyRunningGameClass
-    global CurrentlyRunningGameProcess
-    global NewGameExist
+UpdateGame:
+    ; Detect new game
 
-    if (SteamBigPictureExist()) {
+    TempCurrentlyRunningGameProcess := GetRunningGame()
 
-        TempCurrentlyRunningGameProcess := GetRunningGame()
-
-        if (TempCurrentlyRunningGameProcess == 0) {
-            CurrentlyRunningGameClass := ""
-            CurrentlyRunningGameProcess := ""
-            return
-        }
-            
-
-        TempCurrentlyRunningGameClass := GetProcessClass(TempCurrentlyRunningGameProcess)
-
-        if (TempCurrentlyRunningGameClass != CurrentlyRunningGameClass) {
-            
-            CurrentlyRunningGameProcess := TempCurrentlyRunningGameProcess
-            CurrentlyRunningGameClass := TempCurrentlyRunningGameClass
-            NewGameExist := True
-            
-            MoveAppToLeft(CurrentlyRunningGameClass)
-
-        }
-    } 
-    else {
+    if (TempCurrentlyRunningGameProcess == 0) {
+        OldGameProcess := CurrentlyRunningGameProcess
         CurrentlyRunningGameClass := ""
         CurrentlyRunningGameProcess := ""
+        return
     }
         
-    
-    return
-}
+    TempCurrentlyRunningGameClass := GetProcessClass(TempCurrentlyRunningGameProcess)
 
-MoveAppToLeft(AppClass) {
-    PathToAppList := A_ScriptDir "\AppList.txt"
-    WinGet, AppExe, ProcessName, ahk_class %AppClass%
-
-    if !FileExist(PathToAppList)
+    if (TempCurrentlyRunningGameClass == 0)
         return
 
-    Loop, read, %PathToAppList% 
-    {
-        if (AppExe == A_LoopReadLine) {
-            WinActivate, ahk_class %AppClass%
-            SendWinShiftLeft()
-        }
-    }
+    if (TempCurrentlyRunningGameClass != CurrentlyRunningGameClass) { ;Check if new game is launched
 
-}
-
-
-MoveOtherAppToPrimary:
-
-    if (NumAppAt(3560,-40) > 0) && (not (SteamBigPictureExist())) {
-        TempAppsClasses := GrabAllAppAt(3560,-40)
-        
-        for index, TempAppClass in TempAppsClasses {
-            
-            WinActivate, ahk_class %TempAppClass%
-            SendWinShiftRight()
-        }
-    }
-    else if (SteamBigPictureExist()) {
-        TempAppsClass := GrabAllAppAt(-40,-40)
-        UpdateGame()
-
-        if (TempAppsClass == 0)
-            return
-        
-        TempGameClass := GetGame() 
-
-        for index, TempAppClass in TempAppsClass
-        {
-            if (TempAppClass == TempGameClass) {
-                Continue
-            }
-                
-            WinActivate, ahk_class %TempAppClass%
-            SendWinShiftRight()
-        }
+        CurrentlyRunningGameProcess := TempCurrentlyRunningGameProcess
+        CurrentlyRunningGameClass := TempCurrentlyRunningGameClass
+        UpdateNewGameAudio := True
+        UpdateNewGamePosition := True
     }
 
     return
+;
+UpdateGameSettings:
+    if (UpdateNewGamePosition) {
+        PathToAppList := A_ScriptDir "\AppList.txt"
+        MoveGameToLeft(PathToAppList, CurrentlyRunningGameClass)
+        UpdateNewGamePosition := False
+    }
 
+    return
+;
+UpdateApps:
+    if (not (SteamBigPictureExist())) && (NumAppAt(3560,-40) > 0) {
+        MoveAppOut(3560, -40, 0)
+    }
+    else if (SteamBigPictureExist()) {
+        Gosub, UpdateGame
+        MoveAppOut(-40,-40, CurrentlyRunningGameClass)
+    }
 
+    return
+;
+;
 ExitSteam:
     if (SteamBigPictureExist()) {
 
-        if (IsGameExist()) {
-            Game := GetGame()
+        if (IsGameExist(CurrentlyRunningGameClass)) {
+            Game := GetGame(CurrentlyRunningGameClass)
             WinKill, ahk_class %Game%
         }
 

@@ -30,8 +30,6 @@ ResetExplorer() {
             Run %A_LoopField% 
 	        SplitPath, A_LoopField, name
 
-            WinWaitActive, %name%
-            SendWinShiftRight() ; Hacks, should fix this later
         }
     }
 }

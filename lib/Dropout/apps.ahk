@@ -1,8 +1,8 @@
-﻿GetApp() {
+﻿GetApp(CurrentlyRunningGame) {
     ;Get either Steam Big Picture or the Game name
 
-    if(SteamBigPictureExist()) && (IsGameExist()) {
-        GameClass := GetGame()
+    if(SteamBigPictureExist()) && (IsGameExist(CurrentlyRunningGame)) {
+        GameClass := GetGame(CurrentlyRunningGame)
         return GameClass
     }
     else if (SteamBigPictureExist()) {
@@ -18,17 +18,14 @@ SteamBigPictureExist() {
     return 0 
 }
 
-IsGameExist() {
-    global CurrentlyRunningGame
-
+IsGameExist(CurrentlyRunningGame) {
     if (CurrentlyRunningGame != "")
         return 1
 
     return 0    
 }
 
-GetGame() {
-    global CurrentlyRunningGame
+GetGame(CurrentlyRunningGame) {
 
     if (CurrentlyRunningGame != "")
         return CurrentlyRunningGame
@@ -70,4 +67,21 @@ GetRunningGame() {
     }
 
     return GameProc
+}
+
+MoveGameToLeft(AppListPath, AppClass) {
+    PathToAppList := AppListPath
+    WinGet, AppExe, ProcessName, ahk_class %AppClass%
+
+    if !FileExist(PathToAppList)
+        return
+
+    Loop, read, %PathToAppList% 
+    {
+        if (AppExe == A_LoopReadLine) {
+            WinActivate, ahk_class %AppClass%
+            SendWinShiftLeft()
+        }
+    }
+
 }

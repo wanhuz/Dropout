@@ -23,14 +23,13 @@ EnableAllHotkey() {
     Hotkey, Joy2, On
     Hotkey, Joy3, On
     Hotkey, Joy4, On
-    Gosub, EnableHotkey
 }
 
 GetProcessClass(ProcName) {
         WinGetClass, ProcClass, ahk_exe %ProcName%
 
         if (ProcClass == "") { 
-            return ""
+            return 0
         }
 
         return ProcClass
@@ -93,4 +92,29 @@ NumAppAt(Xcoord, Ycoord) {
     }
 
     return AppMonitorThree
+}
+
+MoveAppOut(x, y, exceptionClass) {
+    TempAppsClasses := GrabAllAppAt(x,y)
+
+    if (exceptionClass != 0) ; If game exist, also compare it with apps process
+    	WinGet, exceptionProcess, ProcessName, ahk_class %exceptionClass%
+    
+    for index, TempAppClass in TempAppsClasses {
+
+        if (exceptionClass != 0)
+            WinGet, TempAppClassProcess, ProcessName, ahk_class %TempAppClass%
+
+        if (TempAppClass == exceptionClass) {
+            Continue
+        }   
+        else if (exceptionClass != 0) and (TempAppClassProcess == exceptionProcess) {
+            Continue
+        }
+            
+        WinActivate, ahk_class %TempAppClass%
+        SendWinShiftRight()
+    }
+
+    return
 }
