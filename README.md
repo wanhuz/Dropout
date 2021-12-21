@@ -13,3 +13,4 @@ Features:
 - Specify game to move to virtual monitor if the game is not launched in main monitor.
 - Exit Steam Big Picture and game through system tray menu.
 - Keep pesky unrelated program from interfering with gaming session.
+- Separate game audio from desktop audio! Play games without hearing unnecessary noise.
