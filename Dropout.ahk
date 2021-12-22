@@ -36,7 +36,7 @@ CurrentlyRunningGameProcess := ""
 TaskbarAlreadyMoved := False
 SteamAudioSwitch := False
 UpdateNewGameAudio := False
-UpdateNewGamePosition := False
+UpdateNewGameSetting := False
 
 DesktopIconData := DesktopIcons()
 Menu, Tray, Add , &Exit Steam, ExitSteam
@@ -46,7 +46,8 @@ TargetOutputDevice := """VB-Audio Virtual Cable\Device\CABLE Input\Render"""
 
 SetTimer, UpdateApps, 100
 SetTimer, UpdateTaskbar, 1000
-SetTimer, UpdateAudio, 100 ; Need to be fast because some game set default audio at runtime and cannot be changed
+SetTimer, UpdateGameSetting, 1000
+SetTimer, UpdateAudio, 100, 1 ; Need to be fast because some game set default audio at runtime and cannot be changed
 SetTimer, SaveDesktopIcon, 180000
 
 
@@ -98,6 +99,15 @@ UpdateTaskbar:
 
     return
 ;
+UpdateGameSetting:
+    if (UpdateNewGameSetting) {
+        PathToAppList := A_ScriptDir "\AppList.txt"
+        UpdateGameSettings(PathToAppList, CurrentlyRunningGameClass)
+        UpdateNewGameSetting := False
+    }
+
+    return
+;
 UpdateAudio:
     if (SteamBigPictureExist()) {
 
@@ -117,7 +127,8 @@ UpdateAudio:
 
             ; Set default playback to target first, change the app playback, then set to default playback output. It works this way because idk Windows.
             SetDefaultPlaybackOutput(TargetOutputDevice)
-            Sleep, 3000 ; Workaround for Ace Attorney
+
+            Sleep, 5000 ; Workaround for some games
             SetProcessOutput(TargetOutputDevice, CurrentlyRunningGameProcess)
             SetDefaultPlaybackOutput(DefaultOutputDevice)
 
@@ -158,7 +169,7 @@ UpdateGame:
         CurrentlyRunningGameProcess := TempCurrentlyRunningGameProcess
         CurrentlyRunningGameClass := TempCurrentlyRunningGameClass
         UpdateNewGameAudio := True
-        UpdateGameSettings(CurrentlyRunningGameClass)
+        UpdateNewGameSetting := True
     }
 
     return
