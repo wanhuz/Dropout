@@ -117,6 +117,7 @@ UpdateAudio:
 
             ; Set default playback to target first, change the app playback, then set to default playback output. It works this way because idk Windows.
             SetDefaultPlaybackOutput(TargetOutputDevice)
+            Sleep, 3000 ; Workaround for Ace Attorney
             SetProcessOutput(TargetOutputDevice, CurrentlyRunningGameProcess)
             SetDefaultPlaybackOutput(DefaultOutputDevice)
 
