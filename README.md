@@ -14,3 +14,4 @@ Features:
 - Exit Steam Big Picture and game through system tray menu.
 - Keep pesky unrelated program from interfering with gaming session.
 - Separate game audio from desktop audio! Play games without hearing unnecessary noise.
+- Specify custom command for game like enabling borderless mode, moving game to correct monitor and so on.
