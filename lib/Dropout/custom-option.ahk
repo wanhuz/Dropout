@@ -1,7 +1,6 @@
 ﻿#Include %A_ScriptDir%\lib\Dropout\script-helper.ahk
 
-UpdateGameSettings(AppClass) {
-    PathToAppList := A_ScriptDir "\AppList.txt"
+UpdateGameSettings(PathToAppList, AppClass) {
 
     WinGet, AppExe, ProcessName, ahk_class %AppClass%
 
@@ -45,9 +44,12 @@ ExecuteCommands(AppExe, CmdList) {
             SendKeyTo(AppExe, KeyToSend)
         }
         else if (cmd == "borderless") {
-
             WinActivate, ahk_exe %AppExe%
             MakeBorderless()
+        }
+        else if (cmd == "MinMax") {
+            WinActivate, ahk_exe %AppExe%
+            MinMax(AppExe)
         }
 
     }

@@ -1,4 +1,5 @@
-﻿
+﻿#Include %A_ScriptDir%\lib\Dropout\script-helper.ahk
+
 ResetExplorer() {
     
     ; Get a list of all opened explorer windows:
@@ -29,7 +30,8 @@ ResetExplorer() {
         {
             Run %A_LoopField% 
 	        SplitPath, A_LoopField, name
-
+            WinWaitActive, %name%
+            SendWinShiftRight() ; Hacks, but this works so I guess keep it until it breaks or smth
         }
     }
 }
