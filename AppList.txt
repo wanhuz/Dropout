@@ -1,5 +1,13 @@
-Muv-Luv_Alternative16.exe
-muvluv16.exe
-Muv-Luv_PM.exe
-SSELauncher.exe
-SmartSteamLoader_muvluvp.exe
+; Available command:
+; sendtoleftscreen: send game to left monitor, some games might not work
+; borderless: make game fullscreen borderless
+; Sleep: wait for x seconds. Seconds is separated by comma
+; SendKey: send keypress to game. Key is separated by comma
+
+Muv-Luv_Alternative16.exe, sendtoleftscreen
+muvluv16.exe, sendtoleftscreen
+Muv-Luv_PM.exe, sendtoleftscreen
+SSELauncher.exe, sendtoleftscreen
+SmartSteamLoader_muvluvp.exe, sendtoleftscreen
+ChaosHeadNoAH.exe, Sleep, 5, SendKey, f
+Atelier_Firis_DX.exe, borderless
