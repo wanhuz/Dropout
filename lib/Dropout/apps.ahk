@@ -69,19 +69,3 @@ GetRunningGame() {
     return GameProc
 }
 
-MoveGameToLeft(AppListPath, AppClass) {
-    PathToAppList := AppListPath
-    WinGet, AppExe, ProcessName, ahk_class %AppClass%
-
-    if !FileExist(PathToAppList)
-        return
-
-    Loop, read, %PathToAppList% 
-    {
-        if (AppExe == A_LoopReadLine) {
-            WinActivate, ahk_class %AppClass%
-            SendWinShiftLeft()
-        }
-    }
-
-}

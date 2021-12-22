@@ -9,6 +9,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #Include %A_ScriptDir%\lib\Dropout\script-helper.ahk
 #Include %A_ScriptDir%\lib\Dropout\virtualization.ahk
 #Include %A_ScriptDir%\lib\Dropout\quality-of-life.ahk
+#Include %A_ScriptDir%\lib\Dropout\custom-option.ahk
 #Include %A_ScriptDir%\lib\SoundVolumeView\SoundVolumeViewWrapper.ahk
 
 /*
@@ -46,7 +47,6 @@ TargetOutputDevice := """VB-Audio Virtual Cable\Device\CABLE Input\Render"""
 SetTimer, UpdateApps, 100
 SetTimer, UpdateTaskbar, 1000
 SetTimer, UpdateAudio, 100 ; Need to be fast because some game set default audio at runtime and cannot be changed
-SetTimer, UpdateGameSettings, 1000
 SetTimer, SaveDesktopIcon, 180000
 
 
@@ -157,19 +157,11 @@ UpdateGame:
         CurrentlyRunningGameProcess := TempCurrentlyRunningGameProcess
         CurrentlyRunningGameClass := TempCurrentlyRunningGameClass
         UpdateNewGameAudio := True
-        UpdateNewGamePosition := True
+        UpdateGameSettings(CurrentlyRunningGameClass)
     }
 
     return
-;
-UpdateGameSettings:
-    if (UpdateNewGamePosition) {
-        PathToAppList := A_ScriptDir "\AppList.txt"
-        MoveGameToLeft(PathToAppList, CurrentlyRunningGameClass)
-        UpdateNewGamePosition := False
-    }
 
-    return
 ;
 UpdateApps:
     if (not (SteamBigPictureExist())) && (NumAppAt(3560,-40) > 0) {
