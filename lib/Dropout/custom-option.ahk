@@ -47,10 +47,6 @@ ExecuteCommands(AppExe, CmdList) {
             WinActivate, ahk_exe %AppExe%
             MakeBorderless()
         }
-        else if (cmd == "MinMax") {
-            WinActivate, ahk_exe %AppExe%
-            MinMax(AppExe)
-        }
 
     }
 }
