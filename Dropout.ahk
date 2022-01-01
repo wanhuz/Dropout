@@ -44,11 +44,11 @@ Menu, Tray, Add , &Exit Steam, ExitSteam
 DefaultOutputDevice := """Realtek High Definition Audio\Device\Speakers\Render"""
 TargetOutputDevice := """VB-Audio Virtual Cable\Device\CABLE Input\Render"""
 
-SetTimer, UpdateApps, 100
-SetTimer, UpdateTaskbar, 1000
-SetTimer, UpdateGameSetting, 1000
-SetTimer, UpdateAudio, 100, 1 ; Need to be fast because some game set default audio at runtime and cannot be changed
-SetTimer, SaveDesktopIcon, 180000
+SetTimer, UpdateApps, 100, 3
+SetTimer, UpdateTaskbar, 1000, 2
+SetTimer, UpdateGameSetting, 1000, 1
+SetTimer, UpdateAudio, 100, 3 ; Need to be fast because some game set default audio at runtime and cannot be changed
+SetTimer, SaveDesktopIcon, 180000, 0
 
 
 return
@@ -82,6 +82,7 @@ UpdateTaskbar:
 
     If (SteamBigPictureExist()) && (TaskbarAlreadyMoved == False) {
         BlockInput, On
+        SetTimer, UpdateApps, Off
         DisableAllHotkey()
 	    Sleep, 200
 
@@ -92,6 +93,7 @@ UpdateTaskbar:
 
         EnableAllHotkey()
         Gosub, EnableHotkey
+        SetTimer, UpdateApps, On
         BlockInput, Off
     }
     else if (Not (SteamBigPictureExist())) && (TaskbarAlreadyMoved == True)
@@ -124,13 +126,11 @@ UpdateAudio:
         }
 
         if (UpdateNewGameAudio) {
-
             ; Set default playback to target first, change the app playback, then set to default playback output. It works this way because idk Windows.
             SetDefaultPlaybackOutput(TargetOutputDevice)
 
-            Sleep, 5000 ; Workaround for some games
-            SetProcessOutput(TargetOutputDevice, CurrentlyRunningGameProcess)
-            SetDefaultPlaybackOutput(DefaultOutputDevice)
+            Sleep, 7000 ; Workaround for some games
+            SetAppOutputThenSwitchDefaultOutput(TargetOutputDevice, CurrentlyRunningGameProcess, DefaultOutputDevice)
 
             UpdateNewGameAudio := False
         }

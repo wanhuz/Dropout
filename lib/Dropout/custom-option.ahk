@@ -41,7 +41,9 @@ ExecuteCommands(AppExe, CmdList) {
         else if (cmd == "SendKey") {
 
             KeyToSend := CmdList[index + 1]
-            SendKeyTo(AppExe, KeyToSend)
+            WinActivate, ahk_exe %AppExe%
+            WinWaitActive, ahk_exe %AppExe%, , 10000
+            SendKey(KeyToSend)
         }
         else if (cmd == "borderless") {
             WinActivate, ahk_exe %AppExe%
@@ -68,8 +70,7 @@ Wait(ms) {
     Sleep secs
 }
 
-SendKeyTo(AppExe, key) {
-    WinActivate, ahk_exe %AppExe%
+SendKey(key) {
     Send {%key%}
 }
 

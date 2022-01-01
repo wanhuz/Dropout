@@ -25,8 +25,20 @@ SetDefaultProcessOutput(targetProcess) {
 
 SetProcessOutput(outputDevice, targetProcess) {
     path := GetSoundViewPath()
-    RunWait, %ComSpec% /c %path% /SetAppDefault %outputDevice% all %targetProcess%, , Hide
+    cmd := path " /Unmute " targetProcess " /WaitForItem 12 && " path " /SetAppDefault " outputDevice " all " targetProcess
+    Run, %ComSpec% /k %cmd%, , Hide
 }
+
+SetAppOutputThenSwitchDefaultOutput(outputDevice, targetProcess, switchDevice) {
+    path := GetSoundViewPath()
+    WaitCmd := path " /Unmute " targetProcess " /WaitForItem 12 && " 
+    DefaultCmd := path " /SetAppDefault " outputDevice " all " targetProcess " && "
+    SwitchCmd := path " /SetDefault " switchDevice " all "
+    cmd := WaitCmd DefaultCmd SwitchCmd
+
+    Run, %ComSpec% /k %cmd%, , Hide
+}
+
 
 DisableOutputDevice(outputDevice) {
     path := GetSoundViewPath()
