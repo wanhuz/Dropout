@@ -9,5 +9,4 @@ muvluv16.exe, sendtoleftscreen
 Muv-Luv_PM.exe, sendtoleftscreen
 SSELauncher.exe, sendtoleftscreen
 SmartSteamLoader_muvluvp.exe, sendtoleftscreen
-ChaosHeadNoAH.exe, Sleep, 10, SendKey, f
 Atelier_Firis_DX.exe, borderless

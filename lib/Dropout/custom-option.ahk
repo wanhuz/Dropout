@@ -33,18 +33,6 @@ ExecuteCommands(AppExe, CmdList) {
             WinActivate, ahk_exe %AppExe%
             MoveToLeftScreen()
         }
-        else if (cmd == "Sleep") {
-            
-            TimeSleep := CmdList[index + 1]
-            Wait(TimeSleep)
-        }
-        else if (cmd == "SendKey") {
-
-            KeyToSend := CmdList[index + 1]
-            WinActivate, ahk_exe %AppExe%
-            WinWaitActive, ahk_exe %AppExe%, , 10000
-            SendKey(KeyToSend)
-        }
         else if (cmd == "borderless") {
             WinActivate, ahk_exe %AppExe%
             MakeBorderless()
@@ -54,25 +42,10 @@ ExecuteCommands(AppExe, CmdList) {
 }
 
 
-
 MoveToLeftScreen() {
     SendWinShiftLeft()
 }
 
-ManualDetection() {
-
-}
-
-; Custom AHK commands
-
-Wait(ms) {
-    secs := ms * 1000
-    Sleep secs
-}
-
-SendKey(key) {
-    Send {%key%}
-}
 
 ; Borderless
 

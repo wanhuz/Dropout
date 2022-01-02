@@ -58,6 +58,12 @@ GrabAllAppAt(xcoord, ycoord) {
             Continue
         else if (AppClass == "Internet Explorer_Hidden")
             Continue
+        else if (AppClass == "OpenShell.CMenuContainer")
+            Continue
+        else if (AppClass == "OpenShell.CUserWindow")
+            Continue
+        else if (AppClass == "SysShadow")
+            Continue
 
         If (X>xcoord and Y>ycoord)  ; Coordinate changes if primary monitor changes, see Autohotkey Spy. X and Y < 0 because fullscreen apps coordinate starts at 0,0
             AllApp.Push(AppClass)        
@@ -84,6 +90,14 @@ NumAppAt(Xcoord, Ycoord) {
         else if (AppClass == "Shell_TrayWnd") ; Ignore Shell Tray
             Continue
         else if (AppClass == "Shell_SecondaryTrayWnd")
+            Continue
+        else if (AppClass == "Internet Explorer_Hidden")
+            Continue
+        else if (AppClass == "OpenShell.CMenuContainer")
+            Continue
+        else if (AppClass == "OpenShell.CUserWindow")
+            Continue
+        else if (AppClass == "SysShadow")
             Continue
 
         If (X > Xcoord and Y > Ycoord)  ; Coordinate changes if primary monitor changes, see Autohotkey Spy
@@ -114,6 +128,17 @@ MoveAppOut(x, y, exceptionClass) {
             
         WinActivate, ahk_class %TempAppClass%
         SendWinShiftRight()
+    }
+
+    return
+}
+
+PrintAppOut(x, y) {
+    TempAppsClasses := GrabAllAppAt(x,y)
+
+    for index, TempAppClass in TempAppsClasses {
+        MsgBox, %TempAppClass%
+
     }
 
     return
