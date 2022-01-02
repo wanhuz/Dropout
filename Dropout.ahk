@@ -44,10 +44,10 @@ Menu, Tray, Add , &Exit Steam, ExitSteam
 DefaultOutputDevice := """Realtek High Definition Audio\Device\Speakers\Render"""
 TargetOutputDevice := """VB-Audio Virtual Cable\Device\CABLE Input\Render"""
 
-SetTimer, UpdateApps, 100
-SetTimer, UpdateTaskbar, 1000
-SetTimer, UpdateGameSetting, 1000
-SetTimer, UpdateAudio, 100, 1 ; Need to be fast because some game set default audio at runtime and cannot be changed
+SetTimer, UpdateApps, 100, 3
+SetTimer, UpdateTaskbar, 1000, 2
+SetTimer, UpdateGameSetting, 1000, 3
+SetTimer, UpdateAudio, 100, 3 ; Need to be fast because some game set default audio at runtime and cannot be changed
 SetTimer, SaveDesktopIcon, 180000
 
 
@@ -82,6 +82,7 @@ UpdateTaskbar:
 
     If (SteamBigPictureExist()) && (TaskbarAlreadyMoved == False) {
         BlockInput, On
+        SetTimer, UpdateApps, Off
         DisableAllHotkey()
 	    Sleep, 200
 
@@ -92,6 +93,7 @@ UpdateTaskbar:
 
         EnableAllHotkey()
         Gosub, EnableHotkey
+        SetTimer, UpdateApps, On
         BlockInput, Off
     }
     else if (Not (SteamBigPictureExist())) && (TaskbarAlreadyMoved == True)
@@ -118,19 +120,12 @@ UpdateAudio:
             SteamAudioSwitch := True
         }
 
-        if (OldGameProcess != "") { ; Reset old app audio. This doesn't work because SoundVolumeView cannot change setting for closed program. I'll leave it here for future fix.
-            SetProcessOutput(DefaultOutputDevice, OldGameProcess)
-            OldGameProcess := ""
-        }
-
         if (UpdateNewGameAudio) {
-
             ; Set default playback to target first, change the app playback, then set to default playback output. It works this way because idk Windows.
             SetDefaultPlaybackOutput(TargetOutputDevice)
 
-            Sleep, 5000 ; Workaround for some games
-            SetProcessOutput(TargetOutputDevice, CurrentlyRunningGameProcess)
-            SetDefaultPlaybackOutput(DefaultOutputDevice)
+            Sleep, 7000 ; Workaround for some games
+            SetAppOutputThenSwitchDefaultOutput(TargetOutputDevice, CurrentlyRunningGameProcess, DefaultOutputDevice)
 
             UpdateNewGameAudio := False
         }
@@ -153,7 +148,6 @@ UpdateGame:
     TempCurrentlyRunningGameProcess := GetRunningGame()
 
     if (TempCurrentlyRunningGameProcess == 0) {
-        OldGameProcess := CurrentlyRunningGameProcess
         CurrentlyRunningGameClass := ""
         CurrentlyRunningGameProcess := ""
         return
@@ -165,7 +159,6 @@ UpdateGame:
         return
 
     if (TempCurrentlyRunningGameClass != CurrentlyRunningGameClass) { ;Check if new game is launched
-
         CurrentlyRunningGameProcess := TempCurrentlyRunningGameProcess
         CurrentlyRunningGameClass := TempCurrentlyRunningGameClass
         UpdateNewGameAudio := True
@@ -179,9 +172,15 @@ UpdateApps:
     if (not (SteamBigPictureExist())) && (NumAppAt(3560,-40) > 0) {
         MoveAppOut(3560, -40, 0)
     }
-    else if (SteamBigPictureExist()) {
-        Gosub, UpdateGame
-        MoveAppOut(-40,-40, CurrentlyRunningGameClass)
+    else if (SteamBigPictureExist())  {
+
+        if (NumAppAt(-40,-40) > 0) {
+            Gosub, UpdateGame
+            MoveAppOut(-40,-40, CurrentlyRunningGameClass)
+        }
+        else
+            Gosub, UpdateGame
+
     }
 
     return
