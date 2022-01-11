@@ -1,7 +1,6 @@
-#NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
-; #Warn  ; Enable warnings to assist with detecting common errors.
-SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
-SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
+#NoEnv 
+SendMode Input
+SetWorkingDir %A_ScriptDir%
 #SingleInstance Force
 
 #Include %A_ScriptDir%\lib\Dropout\process.ahk
@@ -10,7 +9,10 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #Include %A_ScriptDir%\lib\Dropout\virtualization.ahk
 #Include %A_ScriptDir%\lib\Dropout\quality-of-life.ahk
 #Include %A_ScriptDir%\lib\Dropout\custom-option.ahk
+#Include %A_ScriptDir%\lib\Dropout\config.ahk
 #Include %A_ScriptDir%\lib\SoundVolumeView\SoundVolumeViewWrapper.ahk
+
+Menu, Tray, Icon, %A_ScriptDir%\res\dropout.ico
 
 /*
 . This script is a best-effort approach to virtualize third virtual monitor. 
@@ -30,15 +32,30 @@ Script work:
 STEAM_CLASS := "CUIEngineWin32"
 STEAM_PROCESS := "steam.exe"
 
-OldGameProcess := ""
+EnableSteamOverlayHotkey := False
+EnableSteamControllerResetHotkey := False
+EnableExitGameHotkey := False
+EnableDefaultTaskbar := False
+EnableDefaultDesktopIcon := False
+MonitorOnlyHaveSteamAndGame := False
+EnableAudioSeperation := False
+SaveDesktopIconEverySecs = 60
+
+LoadHotkeyConfig(EnableSteamOverlayHotkey, EnableSteamControllerResetHotkey, EnableExitGameHotkey)
+LoadVirtualizationConfig(EnableDefaultTaskbar, EnableDefaultDesktopIcon, MonitorOnlyHaveSteamAndGame, EnableAudioSeperation, SaveDesktopIconEverySecs)
+;LoadDisplayConfig(DefaultDisplayNum)
+;LoadAudioConfig(DefaultAudio, TargetAudio)
+
 CurrentlyRunningGameClass := ""
 CurrentlyRunningGameProcess := ""
+SteamLaunched := False
 TaskbarAlreadyMoved := False
 SteamAudioSwitch := False
 UpdateNewGameAudio := False
 UpdateNewGameSetting := False
 
 DesktopIconData := DesktopIcons()
+SaveDesktopIconEveryMs := SaveDesktopIconEverySecs * 1000
 Menu, Tray, Add , &Exit Steam, ExitSteam
 
 DefaultOutputDevice := """Realtek High Definition Audio\Device\Speakers\Render"""
@@ -47,9 +64,15 @@ TargetOutputDevice := """VB-Audio Virtual Cable\Device\CABLE Input\Render"""
 SetTimer, UpdateApps, 100, 3
 SetTimer, UpdateTaskbar, 1000, 2
 SetTimer, UpdateGameSetting, 1000, 3
-SetTimer, UpdateAudio, 100, 3 ; Need to be fast because some game set default audio at runtime and cannot be changed
-SetTimer, SaveDesktopIcon, 180000
+SetTimer, UpdateAudio, 100, 3 ; Need to be fast because some game set default audio at launch time and cannot be changed
+SetTimer, SaveDesktopIcon, %SaveDesktopIconEveryMs%
 
+if (not EnableDefaultTaskbar)
+    SetTimer, UpdateTaskbar, Delete 
+if (not EnableAudioSeperation)
+    SetTimer, UpdateAudio, Delete 
+if (not EnableDefaultDesktopIcon)
+    SetTimer, SaveDesktopIcon, Delete 
 
 return
 
@@ -58,22 +81,31 @@ EnableHotkey:
 Joy1::
 App := GetApp(CurrentlyRunningGameClass)
 ActivateApp(App)
-SteamOverlay()
+if (EnableSteamOverlayHotkey)
+    SteamOverlay()
 return 
 
 Joy2::
 App := GetApp(CurrentlyRunningGameClass)
 ActivateApp(App)
-ResetController(App)
+if (EnableSteamControllerResetHotkey)
+    ResetController(App)
 return 
 
 Joy3::
 App := GetApp(CurrentlyRunningGameClass)
 ActivateApp(App)
-KillGame(App)
+if (EnableExitGameHotkey)
+    KillGame(App)
 return 
 
 Joy4::
+Joy5::
+Joy6::
+Joy7::
+Joy8::
+Joy9::
+Joy10::
 App := GetApp(CurrentlyRunningGameClass)
 ActivateApp(App)
 return
@@ -88,7 +120,8 @@ UpdateTaskbar:
 
         MovePrimaryTaskbar()
         TaskbarAlreadyMoved := True
-        DesktopIcons(DesktopIconData)
+        if (EnableDefaultDesktopIcon)
+            DesktopIcons(DesktopIconData)
         ActivateApp(STEAM_CLASS)
 
         EnableAllHotkey()
@@ -170,17 +203,28 @@ UpdateGame:
 ;
 UpdateApps:
     if (not (SteamBigPictureExist())) && (NumAppAt(3560,-40) > 0) {
-        MoveAppOut(3560, -40, 0)
+        if (MonitorOnlyHaveSteamAndGame)
+            MoveAppOut(3560, -40, 0)
     }
     else if (SteamBigPictureExist())  {
+        if (not (SteamLaunched))
+            SteamLaunched := True
 
         if (NumAppAt(-40,-40) > 0) {
             Gosub, UpdateGame
-            MoveAppOut(-40,-40, CurrentlyRunningGameClass)
+            if (MonitorOnlyHaveSteamAndGame)
+                MoveAppOut(-40,-40, CurrentlyRunningGameClass)
         }
         else
             Gosub, UpdateGame
 
+    }
+    else if (not (SteamBigPictureExist())) && (SteamLaunched) {
+        SteamLaunched := False
+        CurrentlyRunningGameClass := ""
+        CurrentlyRunningGameProcess := ""
+        UpdateNewGameAudio := False
+        UpdateNewGameSetting := False
     }
 
     return

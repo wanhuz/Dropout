@@ -30,7 +30,12 @@ ResetExplorer() {
         {
             Run %A_LoopField% 
 	        SplitPath, A_LoopField, name
-            WinWaitActive, %name%
+            WinWaitActive, %name%,, 2
+            if ErrorLevel
+            {
+                MoveAppOut(-40,-40, 0)
+                Continue
+            }
             SendWinShiftRight() ; Hacks, but this works so I guess keep it until it breaks or smth
         }
     }
