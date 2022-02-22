@@ -39,12 +39,16 @@ EnableDefaultTaskbar := False
 EnableDefaultDesktopIcon := False
 MonitorOnlyHaveSteamAndGame := False
 EnableAudioSeperation := False
+ReopenFolder := True
 SaveDesktopIconEverySecs = 60
+DefaultOutputDevice := ""
+TargetOutputDevice := ""
 
 LoadHotkeyConfig(EnableSteamOverlayHotkey, EnableSteamControllerResetHotkey, EnableExitGameHotkey)
-LoadVirtualizationConfig(EnableDefaultTaskbar, EnableDefaultDesktopIcon, MonitorOnlyHaveSteamAndGame, EnableAudioSeperation, SaveDesktopIconEverySecs)
+LoadVirtualizationConfig(EnableDefaultTaskbar, EnableDefaultDesktopIcon, MonitorOnlyHaveSteamAndGame, EnableAudioSeperation, SaveDesktopIconEverySecs, ReopenFolder)
 ;LoadDisplayConfig(DefaultDisplayNum)
-;LoadAudioConfig(DefaultAudio, TargetAudio)
+if (EnableAudioSeperation)
+    LoadAudioConfig(DefaultOutputDevice, TargetOutputDevice)
 
 CurrentlyRunningGameClass := ""
 CurrentlyRunningGameProcess := ""
@@ -57,9 +61,6 @@ UpdateNewGameSetting := False
 DesktopIconData := DesktopIcons()
 SaveDesktopIconEveryMs := SaveDesktopIconEverySecs * 1000
 Menu, Tray, Add , &Exit Steam, ExitSteam
-
-DefaultOutputDevice := """Realtek High Definition Audio\Device\Speakers\Render"""
-TargetOutputDevice := """VB-Audio Virtual Cable\Device\CABLE Input\Render"""
 
 SetTimer, UpdateApps, 100, 3
 SetTimer, UpdateTaskbar, 1000, 2
@@ -118,7 +119,7 @@ UpdateTaskbar:
         DisableAllHotkey()
 	    Sleep, 200
 
-        MovePrimaryTaskbar()
+        MovePrimaryTaskbar(ReopenFolder)
         TaskbarAlreadyMoved := True
         if (EnableDefaultDesktopIcon)
             DesktopIcons(DesktopIconData)
@@ -220,6 +221,7 @@ UpdateApps:
 
     }
     else if (not (SteamBigPictureExist())) && (SteamLaunched) {
+	WinClose, ahk_exe %STEAM_PROCESS%
         SteamLaunched := False
         CurrentlyRunningGameClass := ""
         CurrentlyRunningGameProcess := ""

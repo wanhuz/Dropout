@@ -1,6 +1,6 @@
 ﻿#Include %A_ScriptDir%\lib\Dropout\script-helper.ahk
 
-ResetExplorer() {
+ResetExplorer(ReopenFolder) {
     
     ; Get a list of all opened explorer windows:
     If WinExist("ahk_class CabinetWClass") ; explorer
@@ -23,7 +23,7 @@ ResetExplorer() {
     Run, explorer.exe
     
     ; open all explorer windows we had open previously:
-    If (list != "")
+    If (list != "") && (ReopenFolder == True)
     {
         Process, wait, explorer.exe
         Loop, parse, list, "`n" 
@@ -97,10 +97,10 @@ DesktopIcons(coords="") {
    return ret
 }
 
-MovePrimaryTaskbar() {
+MovePrimaryTaskbar(ReopenFolder) {
     ThreeMonitorFirstDisplayTaskbarKey := "30000000FEFFFFFF02800000030000003E00000028000000F0F1FFFF1004000070F9FFFF380400006000000001000000"
     RegWrite, REG_BINARY, HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3, Settings, %ThreeMonitorFirstDisplayTaskbarKey%
 
     Sleep, 100
-    ResetExplorer()
+    ResetExplorer(ReopenFolder)
 }

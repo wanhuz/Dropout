@@ -10,3 +10,4 @@ Muv-Luv_PM.exe, sendtoleftscreen
 SSELauncher.exe, sendtoleftscreen
 SmartSteamLoader_muvluvp.exe, sendtoleftscreen
 Atelier_Firis_DX.exe, borderless
+NeptuniaReBirth1.exe, borderless

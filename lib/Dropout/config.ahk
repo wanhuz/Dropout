@@ -21,7 +21,7 @@ LoadHotkeyConfig(ByRef EnableSteamOverlayHotkey, ByRef EnableSteamControllerRese
     }
 }
 
-LoadVirtualizationConfig(ByRef EnableDefaultTaskbar, ByRef EnableDefaultDesktopIcon, ByRef MonitorOnlyHaveSteamAndGame, ByRef EnableAudioSeperation, ByRef IconDuration) {
+LoadVirtualizationConfig(ByRef EnableDefaultTaskbar, ByRef EnableDefaultDesktopIcon, ByRef MonitorOnlyHaveSteamAndGame, ByRef EnableAudioSeperation, ByRef IconDuration, ByRef ReopenFolder) {
     confFilePath := A_ScriptDir "\Dropout.cfg"
 
     if !FileExist(confFilePath) {
@@ -43,11 +43,46 @@ LoadVirtualizationConfig(ByRef EnableDefaultTaskbar, ByRef EnableDefaultDesktopI
             Set[3] == "true" ? MonitorOnlyHaveSteamAndGame := True : MonitorOnlyHaveSteamAndGame := False
         else if (Set[1] == "enableaudioseperation")
             Set[3] == "true" ? EnableAudioSeperation := True : EnableAudioSeperation := False
+        else if (Set[1] == "reopenfolderwhentaskbarchange")
+            Set[3] == "true" ? ReopenFolder := True : ReopenFolder := False
         else if (Set[1] == "savedesktopiconeverysecs") {
             if (Set[3] < 100000) ; Integer check
                 IconDuration := Set[3]
             else
                 IconDuration := 60
         }
+    }
+}
+
+LoadAudioConfig(ByRef DefaultAudio, ByRef TargetAudio) {
+    confFilePath := A_ScriptDir "\Dropout.cfg"
+
+    if !FileExist(confFilePath) {
+	MsgBox % "Configuration file does not exist at " confFilePath ". Create from the template config_template.cfg or make sure the settings are correct."
+        return
+    }
+
+
+    Loop, read, %confFilePath% 
+    {
+        Line := A_LoopReadLine
+        Set := StrSplit(Line, " ")
+        if (Set[1] == "defaultaudio") {
+		for index, word in Set {
+			if (index == 1) or (index == 2)
+				Continue
+			else {
+				DefaultAudio := DefaultAudio . " " . word
+			}
+		}
+	}
+        else if (Set[1] == "targetaudio")
+		for index, word in Set {
+			if (index == 1) or (index == 2)
+				Continue
+			else {
+				TargetAudio := TargetAudio . " " . word
+			}
+		}
     }
 }
