@@ -1,4 +1,4 @@
-# Dropout
+# Dropout - Abandoned
 
 ***Work in Progress - It works on my PC but not for others; Modify the script and use at own risks***
 
